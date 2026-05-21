@@ -21,6 +21,17 @@ def generate(decisions: dict, job_title: str, company: str, source_path: str = N
         else:
             para.add_run(summary["suggested"])
 
+    for bullet in decisions.get("experience", []):
+        if bullet.get("accepted") and bullet.get("suggested"):
+            para = doc.paragraphs[bullet["paragraph_index"]]
+            runs = para.runs
+            if runs:
+                runs[0].text = bullet["suggested"]
+                for run in runs[1:]:
+                    run.text = ""
+            else:
+                para.add_run(bullet["suggested"])
+
     today = date.today().strftime("%Y-%m-%d")
     safe_company = company.strip().replace(" ", "_")
     safe_title = job_title.strip().replace(" ", "_")

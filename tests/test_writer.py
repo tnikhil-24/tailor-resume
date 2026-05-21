@@ -60,6 +60,47 @@ def test_writer_preserves_run_formatting():
         os.remove(output_path)
 
 
+def test_writer_applies_accepted_experience_bullet():
+    doc = Document()
+    doc.add_paragraph()  # paragraph 0 — summary placeholder
+    para = doc.add_paragraph("Original bullet text.")
+    para.style = doc.styles["List Paragraph"] if "List Paragraph" in [s.name for s in doc.styles] else doc.styles["Normal"]
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "experience": [{"accepted": True, "suggested": "Improved bullet.", "paragraph_index": 1}]
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        assert result.paragraphs[1].text == "Improved bullet."
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
+def test_writer_skips_rejected_experience_bullet():
+    doc = Document()
+    doc.add_paragraph()
+    doc.add_paragraph("Original bullet text.")
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "experience": [{"accepted": False, "suggested": "Improved bullet.", "paragraph_index": 1}]
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        assert result.paragraphs[1].text == "Original bullet text."
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
 def test_writer_does_not_modify_base():
     source = make_test_docx("Original summary text.")
     original_mtime = os.path.getmtime(source)

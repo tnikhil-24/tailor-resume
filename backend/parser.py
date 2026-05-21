@@ -2,15 +2,50 @@ from docx import Document
 from .config import RESUME_PATH
 
 
-def parse_summary() -> dict:
-    doc = Document(RESUME_PATH)
-    paragraphs = doc.paragraphs
+def _load() -> list:
+    return Document(RESUME_PATH).paragraphs
 
+
+def parse_summary() -> dict:
+    paragraphs = _load()
     for i, para in enumerate(paragraphs):
         if para.style.name == "Heading 1" and para.text.strip().upper() == "PROFESSIONAL SUMMARY":
             for j in range(i + 1, len(paragraphs)):
-                next_para = paragraphs[j]
-                if next_para.style.name == "Normal" and next_para.text.strip():
-                    return {"paragraph_index": j, "text": next_para.text.strip()}
-
+                p = paragraphs[j]
+                if p.style.name == "Normal" and p.text.strip():
+                    return {"paragraph_index": j, "text": p.text.strip()}
     raise ValueError("Professional summary section not found in resume")
+
+
+def parse_experience() -> list:
+    paragraphs = _load()
+
+    start = next(
+        (i for i, p in enumerate(paragraphs)
+         if p.style.name == "Heading 1" and p.text.strip().upper() == "WORK EXPERIENCE"),
+        None,
+    )
+    if start is None:
+        raise ValueError("Work experience section not found in resume")
+
+    roles = []
+    current_role = None
+    role_title_found = False
+
+    for i in range(start + 1, len(paragraphs)):
+        para = paragraphs[i]
+        style = para.style.name
+        text = para.text.strip()
+
+        if style == "Heading 1":
+            break
+        if style == "Heading 2" and text:
+            current_role = {"company": text, "bullets": []}
+            role_title_found = False
+            roles.append(current_role)
+        elif style == "Normal" and text and current_role and not role_title_found:
+            role_title_found = True  # skip role/dates line — not tailored
+        elif style == "List Paragraph" and text and current_role:
+            current_role["bullets"].append({"paragraph_index": i, "text": text})
+
+    return roles

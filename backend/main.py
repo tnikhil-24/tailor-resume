@@ -6,8 +6,8 @@ from typing import Any
 import os
 
 from .config import RESUME_PATH
-from .parser import parse_summary
-from .claude import get_summary_suggestion
+from .parser import parse_summary, parse_experience
+from .claude import get_suggestions
 from .writer import generate
 
 app = FastAPI()
@@ -35,13 +35,40 @@ class GenerateRequest(BaseModel):
 @app.post("/tailor")
 def tailor(req: TailorRequest):
     summary = parse_summary()
-    suggestions = get_summary_suggestion(summary["text"], req.jd)
+    experience = parse_experience()
+
+    resume_data = {"summary": summary, "experience": experience}
+    suggestions = get_suggestions(resume_data, req.jd)
+
+    original_bullets = {
+        b["paragraph_index"]: b["text"]
+        for role in experience
+        for b in role["bullets"]
+    }
+
+    experience_response = [
+        {
+            "company": role["company"],
+            "bullets": [
+                {
+                    "paragraph_index": b["paragraph_index"],
+                    "original": original_bullets.get(b["paragraph_index"], ""),
+                    "suggested": b["suggested"],
+                    "reason": b.get("reason", ""),
+                }
+                for b in role["bullets"]
+            ],
+        }
+        for role in suggestions.get("experience", [])
+    ]
+
     return {
         "summary": {
             "original": summary["text"],
             "suggested": suggestions["summary"]["suggested"],
             "paragraph_index": summary["paragraph_index"],
-        }
+        },
+        "experience": experience_response,
     }
 
 
