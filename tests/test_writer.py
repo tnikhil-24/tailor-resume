@@ -101,6 +101,60 @@ def test_writer_skips_rejected_experience_bullet():
         os.remove(output_path)
 
 
+def test_writer_reorders_skills():
+    doc = Document()
+    p0 = doc.add_paragraph()
+    p0.add_run("Web Development: React, Node")
+    p1 = doc.add_paragraph()
+    p1.add_run("AI/ML: LangChain, RAG")
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "skills": {
+            "reordered_categories": [
+                {"paragraph_index": 1, "category": "AI/ML", "items": ["RAG", "LangChain"]},
+                {"paragraph_index": 0, "category": "Web Development", "items": ["Node", "React"]},
+            ],
+            "additions": [],
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        assert result.paragraphs[0].text == "AI/ML: RAG, LangChain"
+        assert result.paragraphs[1].text == "Web Development: Node, React"
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
+def test_writer_appends_confirmed_addition():
+    doc = Document()
+    p = doc.add_paragraph()
+    p.add_run("AI/ML: LangChain, RAG")
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "skills": {
+            "reordered_categories": [
+                {"paragraph_index": 0, "category": "AI/ML", "items": ["LangChain", "RAG"]},
+            ],
+            "additions": [{"category": "AI/ML", "skill": "PyTorch", "added": True}],
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        assert "PyTorch" in result.paragraphs[0].text
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
 def test_writer_does_not_modify_base():
     source = make_test_docx("Original summary text.")
     original_mtime = os.path.getmtime(source)

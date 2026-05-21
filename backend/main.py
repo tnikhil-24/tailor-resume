@@ -6,7 +6,7 @@ from typing import Any
 import os
 
 from .config import RESUME_PATH
-from .parser import parse_summary, parse_experience
+from .parser import parse_summary, parse_experience, parse_skills
 from .claude import get_suggestions
 from .writer import generate
 
@@ -36,8 +36,9 @@ class GenerateRequest(BaseModel):
 def tailor(req: TailorRequest):
     summary = parse_summary()
     experience = parse_experience()
+    skills = parse_skills()
 
-    resume_data = {"summary": summary, "experience": experience}
+    resume_data = {"summary": summary, "experience": experience, "skills": skills}
     suggestions = get_suggestions(resume_data, req.jd)
 
     original_bullets = {
@@ -69,6 +70,7 @@ def tailor(req: TailorRequest):
             "paragraph_index": summary["paragraph_index"],
         },
         "experience": experience_response,
+        "skills": suggestions.get("skills", {"reordered_categories": [], "suggested_additions": []}),
     }
 
 

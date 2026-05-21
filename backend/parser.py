@@ -17,6 +17,32 @@ def parse_summary() -> dict:
     raise ValueError("Professional summary section not found in resume")
 
 
+def parse_skills() -> list:
+    paragraphs = _load()
+
+    start = next(
+        (i for i, p in enumerate(paragraphs)
+         if p.style.name == "Heading 1" and p.text.strip().upper() == "SKILLS"),
+        None,
+    )
+    if start is None:
+        raise ValueError("Skills section not found in resume")
+
+    skills = []
+    for i in range(start + 1, len(paragraphs)):
+        para = paragraphs[i]
+        if para.style.name == "Heading 1":
+            break
+        if para.style.name == "Body Text" and para.text.strip():
+            text = para.text.strip()
+            if ":" in text:
+                category, _, items_str = text.partition(":")
+                items = [item.strip() for item in items_str.split(",") if item.strip()]
+                skills.append({"paragraph_index": i, "category": category.strip(), "items": items})
+
+    return skills
+
+
 def parse_experience() -> list:
     paragraphs = _load()
 

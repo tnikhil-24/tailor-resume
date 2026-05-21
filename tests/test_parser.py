@@ -1,4 +1,4 @@
-from backend.parser import parse_summary, parse_experience
+from backend.parser import parse_summary, parse_experience, parse_skills
 
 
 def test_parse_summary_returns_text_and_index():
@@ -41,3 +41,24 @@ def test_parse_experience_bullet_indices_are_ints():
             assert isinstance(bullet["paragraph_index"], int)
             assert isinstance(bullet["text"], str)
             assert len(bullet["text"]) > 10
+
+
+def test_parse_skills_returns_eight_categories():
+    skills = parse_skills()
+    assert len(skills) == 8
+
+
+def test_parse_skills_structure():
+    skills = parse_skills()
+    for s in skills:
+        assert isinstance(s["paragraph_index"], int)
+        assert isinstance(s["category"], str) and len(s["category"]) > 0
+        assert isinstance(s["items"], list) and len(s["items"]) > 0
+
+
+def test_parse_skills_known_categories():
+    skills = parse_skills()
+    categories = [s["category"] for s in skills]
+    assert any("Programming" in c for c in categories)
+    assert any("AI" in c or "ML" in c for c in categories)
+    assert any("Web" in c for c in categories)

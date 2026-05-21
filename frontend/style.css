@@ -218,3 +218,65 @@ button:hover:not(:disabled) {
 .bullet-row .section-actions {
   flex-shrink: 0;
 }
+
+/* Skills */
+.section-subtitle {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 400;
+}
+
+.skills-preview {
+  margin-bottom: 1rem;
+}
+
+.skill-row {
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+
+.skill-category {
+  font-weight: 600;
+}
+
+.additions-header {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin: 0.75rem 0 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.addition-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f8f8;
+}
+
+.addition-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+
+.addition-skill {
+  font-weight: 600;
+}
+
+.addition-category {
+  color: #888;
+}
+
+.addition-reason {
+  color: #aaa;
+  font-style: italic;
+  font-size: 0.8rem;
+}

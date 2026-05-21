@@ -4,6 +4,7 @@ const state = {
   suggestions: null,
   decisions: {},
   totalBullets: 0,
+  totalAdditions: 0,
 };
 
 function escapeHtml(text) {
@@ -56,10 +57,27 @@ function decideBullet(paragraphIndex, accepted) {
   checkGenerateReady();
 }
 
+function decideAddition(index, added) {
+  const addition = state.suggestions.skills.suggested_additions[index];
+  if (!state.decisions.skills) state.decisions.skills = { reordered_categories: state.suggestions.skills.reordered_categories, additions: [] };
+
+  const existing = state.decisions.skills.additions.find((a) => a.category === addition.category && a.skill === addition.skill);
+  if (existing) {
+    existing.added = added;
+  } else {
+    state.decisions.skills.additions.push({ category: addition.category, skill: addition.skill, added });
+  }
+
+  document.getElementById(`add-btn-${index}`).classList.toggle("active", added);
+  document.getElementById(`skip-btn-${index}`).classList.toggle("active", !added);
+  checkGenerateReady();
+}
+
 function checkGenerateReady() {
   const summaryDone = state.decisions.summary !== undefined;
   const decidedBullets = (state.decisions.experience || []).length;
-  const ready = summaryDone && decidedBullets === state.totalBullets;
+  const decidedAdditions = (state.decisions.skills?.additions || []).length;
+  const ready = summaryDone && decidedBullets === state.totalBullets && decidedAdditions === state.totalAdditions;
 
   document.getElementById("generate-btn").disabled = !ready;
   document.getElementById("generate-hint").classList.toggle("hidden", ready);
@@ -107,6 +125,42 @@ function renderExperience(experience) {
   document.getElementById("experience-section").classList.remove("hidden");
 }
 
+function renderSkills(skills) {
+  state.totalAdditions = skills.suggested_additions.length;
+
+  // Reordered preview
+  const preview = document.getElementById("skills-preview");
+  preview.innerHTML = skills.reordered_categories
+    .map((cat) => `<div class="skill-row"><span class="skill-category">${escapeHtml(cat.category)}:</span> ${escapeHtml(cat.items.join(", "))}</div>`)
+    .join("");
+
+  // Suggested additions
+  const additionsEl = document.getElementById("skills-additions");
+  if (skills.suggested_additions.length === 0) {
+    additionsEl.innerHTML = "";
+    state.decisions.skills = { reordered_categories: skills.reordered_categories, additions: [] };
+  } else {
+    additionsEl.innerHTML = `
+      <div class="additions-header">Suggested additions from JD</div>
+      ${skills.suggested_additions
+        .map((a, i) => `
+          <div class="addition-row">
+            <div class="addition-info">
+              <span class="addition-skill">${escapeHtml(a.skill)}</span>
+              <span class="addition-category">→ ${escapeHtml(a.category)}</span>
+              <span class="addition-reason">${escapeHtml(a.reason)}</span>
+            </div>
+            <div class="section-actions">
+              <button id="add-btn-${i}" class="btn-accept" onclick="decideAddition(${i}, true)">Add</button>
+              <button id="skip-btn-${i}" class="btn-reject" onclick="decideAddition(${i}, false)">Skip</button>
+            </div>
+          </div>`)
+        .join("")}`;
+  }
+
+  document.getElementById("skills-section").classList.remove("hidden");
+}
+
 async function tailor() {
   const jd = document.getElementById("jd").value.trim();
   const job_title = document.getElementById("job_title").value.trim();
@@ -121,6 +175,7 @@ async function tailor() {
   state.company = company;
   state.decisions = {};
   state.totalBullets = 0;
+  state.totalAdditions = 0;
 
   const btn = document.getElementById("tailor-btn");
   btn.disabled = true;
@@ -145,6 +200,9 @@ async function tailor() {
 
     // Render experience
     renderExperience(state.suggestions.experience);
+
+    // Render skills
+    renderSkills(state.suggestions.skills);
 
     document.getElementById("results").classList.remove("hidden");
     document.getElementById("generate-btn").disabled = true;
