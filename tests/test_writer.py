@@ -222,6 +222,96 @@ def test_writer_keeps_selected_projects_in_original_order():
         os.remove(output_path)
 
 
+def test_writer_drops_optional_section():
+    doc = Document()
+    doc.add_paragraph("RESEARCH PAPER")   # idx 0 — heading
+    doc.add_paragraph("Paper citation 1") # idx 1
+    doc.add_paragraph("Paper citation 2") # idx 2
+    doc.add_paragraph("Other content")    # idx 3 — should stay
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "optional_sections": {
+            "research_paper": {"keep": False, "all_paragraph_indices": [0, 1, 2]}
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        texts = [p.text for p in result.paragraphs if p.text.strip()]
+        assert "RESEARCH PAPER" not in texts
+        assert "Paper citation 1" not in texts
+        assert "Other content" in texts
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
+def test_writer_keeps_optional_section():
+    doc = Document()
+    doc.add_paragraph("CERTIFICATIONS")
+    doc.add_paragraph("NPTEL cert")
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "optional_sections": {
+            "certifications": {"keep": True, "all_paragraph_indices": [0, 1]}
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        texts = [p.text for p in result.paragraphs if p.text.strip()]
+        assert "CERTIFICATIONS" in texts
+        assert "NPTEL cert" in texts
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
+def test_writer_projects_and_optional_deletion_uses_original_indices():
+    """Both project and optional section deletions must use original indices."""
+    doc = Document()
+    doc.add_paragraph("Project A | Python")     # idx 0
+    doc.add_paragraph("Bullet A")               # idx 1
+    doc.add_paragraph("Project B | Java")       # idx 2
+    doc.add_paragraph("Bullet B")               # idx 3
+    doc.add_paragraph("CERTIFICATIONS")         # idx 4
+    doc.add_paragraph("NPTEL cert")             # idx 5
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "projects": {
+            "all_projects": [
+                {"title_paragraph_index": 0, "all_paragraph_indices": [0, 1]},
+                {"title_paragraph_index": 2, "all_paragraph_indices": [2, 3]},
+            ],
+            "selected_title_paragraph_indices": [0],
+        },
+        "optional_sections": {
+            "certifications": {"keep": False, "all_paragraph_indices": [4, 5]}
+        },
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        texts = [p.text for p in result.paragraphs if p.text.strip()]
+        assert "Project A | Python" in texts
+        assert "Bullet A" in texts
+        assert "Project B | Java" not in texts
+        assert "CERTIFICATIONS" not in texts
+        assert "NPTEL cert" not in texts
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
 def test_writer_does_not_modify_base():
     source = make_test_docx("Original summary text.")
     original_mtime = os.path.getmtime(source)

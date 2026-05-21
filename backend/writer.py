@@ -55,19 +55,29 @@ def generate(decisions: dict, job_title: str, company: str, source_path: str = N
             else:
                 para.add_run(new_text)
 
+    # Collect all paragraph elements to delete in one pass before any deletion
+    to_delete = []
+
     projects = decisions.get("projects", {})
     all_projects = projects.get("all_projects", [])
     selected = set(projects.get("selected_title_paragraph_indices", []))
     if all_projects and selected:
-        to_delete = []
         for proj in all_projects:
             if proj["title_paragraph_index"] not in selected:
                 to_delete.extend(
                     doc.paragraphs[idx]._element
                     for idx in proj["all_paragraph_indices"]
                 )
-        for elem in to_delete:
-            elem.getparent().remove(elem)
+
+    for section_data in decisions.get("optional_sections", {}).values():
+        if not section_data.get("keep"):
+            to_delete.extend(
+                doc.paragraphs[idx]._element
+                for idx in section_data.get("all_paragraph_indices", [])
+            )
+
+    for elem in to_delete:
+        elem.getparent().remove(elem)
 
     today = date.today().strftime("%Y-%m-%d")
     safe_company = company.strip().replace(" ", "_")

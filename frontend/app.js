@@ -96,12 +96,30 @@ function toggleProject(titleParagraphIndex) {
   checkGenerateReady();
 }
 
+function decideOptional(key, keep) {
+  if (!state.decisions.optional_sections) state.decisions.optional_sections = {};
+  const section = state.suggestions.optional_sections[key];
+  state.decisions.optional_sections[key] = {
+    keep,
+    all_paragraph_indices: section.all_paragraph_indices,
+  };
+
+  document.getElementById(`opt-keep-${key}`).classList.toggle("active", keep);
+  document.getElementById(`opt-remove-${key}`).classList.toggle("active", !keep);
+  checkGenerateReady();
+}
+
 function checkGenerateReady() {
   const summaryDone = state.decisions.summary !== undefined;
   const decidedBullets = (state.decisions.experience || []).length;
   const decidedAdditions = (state.decisions.skills?.additions || []).length;
   const projectsOk = state.selectedProjects.size >= 1 && state.selectedProjects.size <= 3;
-  const ready = summaryDone && decidedBullets === state.totalBullets && decidedAdditions === state.totalAdditions && projectsOk;
+  const optionalKeys = Object.keys(state.suggestions?.optional_sections || {});
+  const decidedOptional = Object.keys(state.decisions.optional_sections || {}).length;
+  const optionalDone = decidedOptional === optionalKeys.length;
+
+  const ready = summaryDone && decidedBullets === state.totalBullets &&
+    decidedAdditions === state.totalAdditions && projectsOk && optionalDone;
 
   document.getElementById("generate-btn").disabled = !ready;
   document.getElementById("generate-hint").classList.toggle("hidden", ready);
@@ -207,6 +225,49 @@ function renderProjects(projects) {
   document.getElementById("projects-section").classList.remove("hidden");
 }
 
+const OPTIONAL_LABELS = {
+  research_paper: "Research Paper",
+  achievements: "Achievements",
+  certifications: "Certifications",
+};
+
+function renderOptionalSections(optional_sections) {
+  const container = document.getElementById("optional-content");
+  container.innerHTML = Object.entries(optional_sections)
+    .map(([key, data]) => `
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-title">${OPTIONAL_LABELS[key] || key}</span>
+          <div class="section-actions">
+            <button id="opt-keep-${key}" class="btn-accept ${data.keep ? "active" : ""}"
+              onclick="decideOptional('${key}', true)">Keep</button>
+            <button id="opt-remove-${key}" class="btn-reject ${!data.keep ? "active" : ""}"
+              onclick="decideOptional('${key}', false)">Remove</button>
+          </div>
+        </div>
+        <div class="opt-reason">${escapeHtml(data.reason)}</div>
+      </div>`)
+    .join("");
+  document.getElementById("optional-sections").classList.remove("hidden");
+
+  // Pre-populate decisions with Claude's defaults
+  if (!state.decisions.optional_sections) state.decisions.optional_sections = {};
+  for (const [key, data] of Object.entries(optional_sections)) {
+    state.decisions.optional_sections[key] = {
+      keep: data.keep,
+      all_paragraph_indices: data.all_paragraph_indices,
+    };
+  }
+}
+
+function renderGaps(gaps) {
+  if (!gaps || gaps.length === 0) return;
+  document.getElementById("gaps-content").innerHTML = gaps
+    .map((g) => `<span class="gap-chip">${escapeHtml(g)}</span>`)
+    .join("");
+  document.getElementById("gaps-section").classList.remove("hidden");
+}
+
 async function tailor() {
   const jd = document.getElementById("jd").value.trim();
   const job_title = document.getElementById("job_title").value.trim();
@@ -219,7 +280,7 @@ async function tailor() {
 
   state.job_title = job_title;
   state.company = company;
-  state.decisions = {};
+  state.decisions = { optional_sections: {} };
   state.totalBullets = 0;
   state.totalAdditions = 0;
   state.selectedProjects = new Set();
@@ -253,6 +314,10 @@ async function tailor() {
 
     // Render projects
     renderProjects(state.suggestions.projects);
+
+    // Render optional sections and gaps
+    renderOptionalSections(state.suggestions.optional_sections);
+    renderGaps(state.suggestions.gaps);
 
     document.getElementById("results").classList.remove("hidden");
     document.getElementById("generate-btn").disabled = true;

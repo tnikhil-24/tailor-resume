@@ -1,4 +1,4 @@
-from backend.parser import parse_summary, parse_experience, parse_skills, parse_projects
+from backend.parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
 
 
 def test_parse_summary_returns_text_and_index():
@@ -90,3 +90,26 @@ def test_parse_projects_title_indices_unique():
     projects = parse_projects()
     indices = [p["title_paragraph_index"] for p in projects]
     assert len(indices) == len(set(indices))
+
+
+def test_parse_optional_sections_returns_all_three():
+    result = parse_optional_sections()
+    assert "research_paper" in result
+    assert "achievements" in result
+    assert "certifications" in result
+
+
+def test_parse_optional_sections_structure():
+    result = parse_optional_sections()
+    for key, section in result.items():
+        assert isinstance(section["heading_paragraph_index"], int)
+        assert isinstance(section["content_paragraph_indices"], list)
+        assert len(section["content_paragraph_indices"]) > 0
+        assert isinstance(section["texts"], list)
+        assert len(section["texts"]) == len(section["content_paragraph_indices"])
+
+
+def test_parse_optional_sections_content():
+    result = parse_optional_sections()
+    assert any("NPTEL" in t or "Coursera" in t for t in result["certifications"]["texts"])
+    assert any("Winner" in t or "Runner" in t for t in result["achievements"]["texts"])

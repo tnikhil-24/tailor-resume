@@ -6,7 +6,7 @@ from typing import Any
 import os
 
 from .config import RESUME_PATH
-from .parser import parse_summary, parse_experience, parse_skills, parse_projects
+from .parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
 from .claude import get_suggestions
 from .writer import generate
 
@@ -38,8 +38,15 @@ def tailor(req: TailorRequest):
     experience = parse_experience()
     skills = parse_skills()
     projects = parse_projects()
+    optional_sections = parse_optional_sections()
 
-    resume_data = {"summary": summary, "experience": experience, "skills": skills, "projects": projects}
+    resume_data = {
+        "summary": summary,
+        "experience": experience,
+        "skills": skills,
+        "projects": projects,
+        "optional_sections": optional_sections,
+    }
     suggestions = get_suggestions(resume_data, req.jd)
 
     original_bullets = {
@@ -81,6 +88,18 @@ def tailor(req: TailorRequest):
         for proj in suggestions.get("projects", [])
     ]
 
+    # Build optional sections response — attach all_paragraph_indices for writer
+    opt_suggestions = suggestions.get("optional_sections", {})
+    optional_response = {}
+    for key, section in optional_sections.items():
+        all_indices = [section["heading_paragraph_index"]] + section["content_paragraph_indices"]
+        rec = opt_suggestions.get(key, {"keep": True, "reason": ""})
+        optional_response[key] = {
+            "keep": rec.get("keep", True),
+            "reason": rec.get("reason", ""),
+            "all_paragraph_indices": all_indices,
+        }
+
     return {
         "summary": {
             "original": summary["text"],
@@ -90,6 +109,8 @@ def tailor(req: TailorRequest):
         "experience": experience_response,
         "skills": suggestions.get("skills", {"reordered_categories": [], "suggested_additions": []}),
         "projects": projects_response,
+        "optional_sections": optional_response,
+        "gaps": suggestions.get("gaps", []),
     }
 
 

@@ -78,6 +78,34 @@ def parse_projects() -> list:
     return projects
 
 
+def parse_optional_sections() -> dict:
+    paragraphs = _load()
+
+    def _collect(start: int) -> dict:
+        indices, texts = [], []
+        for i in range(start + 1, len(paragraphs)):
+            para = paragraphs[i]
+            if para.style.name in ("Heading 1", "Heading 2"):
+                break
+            if para.style.name == "List Paragraph" and para.text.strip():
+                indices.append(i)
+                texts.append(para.text.strip())
+        return {"heading_paragraph_index": start, "content_paragraph_indices": indices, "texts": texts}
+
+    result = {}
+
+    for i, para in enumerate(paragraphs):
+        text_upper = para.text.strip().upper()
+        if para.style.name == "Heading 1" and text_upper == "RESEARCH PAPER":
+            result["research_paper"] = _collect(i)
+        elif para.style.name == "Heading 1" and text_upper == "CERTIFICATIONS":
+            result["certifications"] = _collect(i)
+        elif para.style.name == "Normal" and text_upper == "ACHIEVEMENTS":
+            result["achievements"] = _collect(i)
+
+    return result
+
+
 def parse_experience() -> list:
     paragraphs = _load()
 
