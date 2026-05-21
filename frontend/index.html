@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resume Tailor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Resume Tailor</h1>
+
+    <div class="form">
+      <div class="row">
+        <div class="field">
+          <label for="job_title">Job Title</label>
+          <input id="job_title" type="text" placeholder="e.g. Software Engineer" />
+        </div>
+        <div class="field">
+          <label for="company">Company</label>
+          <input id="company" type="text" placeholder="e.g. Google" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="jd">Job Description</label>
+        <textarea id="jd" rows="12" placeholder="Paste the full job description here..."></textarea>
+      </div>
+
+      <button id="tailor-btn" onclick="tailor()">Tailor Resume</button>
+    </div>
+
+    <div id="output" class="output hidden"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
