@@ -43,6 +43,41 @@ def parse_skills() -> list:
     return skills
 
 
+def parse_projects() -> list:
+    paragraphs = _load()
+
+    start = next(
+        (i for i, p in enumerate(paragraphs)
+         if p.style.name == "Heading 1" and p.text.strip().upper() == "PROJECT EXPERIENCE"),
+        None,
+    )
+    if start is None:
+        raise ValueError("Project experience section not found in resume")
+
+    projects = []
+    current_project = None
+
+    for i in range(start + 1, len(paragraphs)):
+        para = paragraphs[i]
+        text = para.text.strip()
+
+        if para.style.name == "Heading 1":
+            break
+        if para.style.name == "Normal" and text and "|" in text:
+            parts = text.split("|", 1)
+            current_project = {
+                "title": parts[0].strip(),
+                "tech": parts[1].strip() if len(parts) > 1 else "",
+                "title_paragraph_index": i,
+                "bullets": [],
+            }
+            projects.append(current_project)
+        elif para.style.name == "Normal" and text and current_project:
+            current_project["bullets"].append({"paragraph_index": i, "text": text})
+
+    return projects
+
+
 def parse_experience() -> list:
     paragraphs = _load()
 

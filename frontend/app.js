@@ -5,6 +5,7 @@ const state = {
   decisions: {},
   totalBullets: 0,
   totalAdditions: 0,
+  selectedProjects: new Set(),
 };
 
 function escapeHtml(text) {
@@ -73,11 +74,34 @@ function decideAddition(index, added) {
   checkGenerateReady();
 }
 
+function toggleProject(titleParagraphIndex) {
+  if (state.selectedProjects.has(titleParagraphIndex)) {
+    state.selectedProjects.delete(titleParagraphIndex);
+  } else {
+    state.selectedProjects.add(titleParagraphIndex);
+  }
+
+  const count = state.selectedProjects.size;
+  document.getElementById("projects-counter").textContent =
+    count === 0 ? "Select 1–3" : `${count} selected`;
+
+  state.decisions.projects = {
+    all_projects: state.suggestions.projects.map((p) => ({
+      title_paragraph_index: p.title_paragraph_index,
+      all_paragraph_indices: p.all_paragraph_indices,
+    })),
+    selected_title_paragraph_indices: Array.from(state.selectedProjects),
+  };
+
+  checkGenerateReady();
+}
+
 function checkGenerateReady() {
   const summaryDone = state.decisions.summary !== undefined;
   const decidedBullets = (state.decisions.experience || []).length;
   const decidedAdditions = (state.decisions.skills?.additions || []).length;
-  const ready = summaryDone && decidedBullets === state.totalBullets && decidedAdditions === state.totalAdditions;
+  const projectsOk = state.selectedProjects.size >= 1 && state.selectedProjects.size <= 3;
+  const ready = summaryDone && decidedBullets === state.totalBullets && decidedAdditions === state.totalAdditions && projectsOk;
 
   document.getElementById("generate-btn").disabled = !ready;
   document.getElementById("generate-hint").classList.toggle("hidden", ready);
@@ -161,6 +185,28 @@ function renderSkills(skills) {
   document.getElementById("skills-section").classList.remove("hidden");
 }
 
+function renderProjects(projects) {
+  state.selectedProjects = new Set();
+  const container = document.getElementById("projects-content");
+  container.innerHTML = projects
+    .map(
+      (p) => `
+      <div class="project-row" id="project-row-${p.title_paragraph_index}">
+        <label class="project-check">
+          <input type="checkbox" onchange="toggleProject(${p.title_paragraph_index})" />
+          <div class="project-info">
+            <span class="project-title">${escapeHtml(p.title)}</span>
+            <span class="project-score">${p.relevance_score}%</span>
+          </div>
+        </label>
+        <div class="project-reason">${escapeHtml(p.reason)}</div>
+      </div>`
+    )
+    .join("");
+  document.getElementById("projects-counter").textContent = "Select 1–3";
+  document.getElementById("projects-section").classList.remove("hidden");
+}
+
 async function tailor() {
   const jd = document.getElementById("jd").value.trim();
   const job_title = document.getElementById("job_title").value.trim();
@@ -176,6 +222,7 @@ async function tailor() {
   state.decisions = {};
   state.totalBullets = 0;
   state.totalAdditions = 0;
+  state.selectedProjects = new Set();
 
   const btn = document.getElementById("tailor-btn");
   btn.disabled = true;
@@ -203,6 +250,9 @@ async function tailor() {
 
     // Render skills
     renderSkills(state.suggestions.skills);
+
+    // Render projects
+    renderProjects(state.suggestions.projects);
 
     document.getElementById("results").classList.remove("hidden");
     document.getElementById("generate-btn").disabled = true;

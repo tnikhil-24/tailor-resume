@@ -6,7 +6,7 @@ from typing import Any
 import os
 
 from .config import RESUME_PATH
-from .parser import parse_summary, parse_experience, parse_skills
+from .parser import parse_summary, parse_experience, parse_skills, parse_projects
 from .claude import get_suggestions
 from .writer import generate
 
@@ -37,8 +37,9 @@ def tailor(req: TailorRequest):
     summary = parse_summary()
     experience = parse_experience()
     skills = parse_skills()
+    projects = parse_projects()
 
-    resume_data = {"summary": summary, "experience": experience, "skills": skills}
+    resume_data = {"summary": summary, "experience": experience, "skills": skills, "projects": projects}
     suggestions = get_suggestions(resume_data, req.jd)
 
     original_bullets = {
@@ -63,6 +64,23 @@ def tailor(req: TailorRequest):
         for role in suggestions.get("experience", [])
     ]
 
+    # Build project lookup: title_paragraph_index → all paragraph indices
+    project_paragraphs = {
+        p["title_paragraph_index"]: [p["title_paragraph_index"]] + [b["paragraph_index"] for b in p["bullets"]]
+        for p in projects
+    }
+
+    projects_response = [
+        {
+            "title": proj["title"],
+            "title_paragraph_index": proj["title_paragraph_index"],
+            "all_paragraph_indices": project_paragraphs.get(proj["title_paragraph_index"], [proj["title_paragraph_index"]]),
+            "relevance_score": proj.get("relevance_score", 0),
+            "reason": proj.get("reason", ""),
+        }
+        for proj in suggestions.get("projects", [])
+    ]
+
     return {
         "summary": {
             "original": summary["text"],
@@ -71,6 +89,7 @@ def tailor(req: TailorRequest):
         },
         "experience": experience_response,
         "skills": suggestions.get("skills", {"reordered_categories": [], "suggested_additions": []}),
+        "projects": projects_response,
     }
 
 

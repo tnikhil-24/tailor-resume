@@ -20,6 +20,11 @@ def get_suggestions(resume_data: dict, jd: str) -> dict:
     for s in resume_data.get("skills", []):
         skills_text += f"  (idx:{s['paragraph_index']}) {s['category']}: {', '.join(s['items'])}\n"
 
+    # Build projects text (titles + tech only — no bullets to stay within token budget)
+    projects_text = ""
+    for p in resume_data.get("projects", []):
+        projects_text += f"  (idx:{p['title_paragraph_index']}) {p['title']} | {p['tech']}\n"
+
     # Build JSON templates for response
     experience_template = json.dumps([
         {
@@ -42,6 +47,11 @@ def get_suggestions(resume_data: dict, jd: str) -> dict:
         ],
     }, indent=2)
 
+    projects_template = json.dumps([
+        {"title": p["title"], "title_paragraph_index": p["title_paragraph_index"], "relevance_score": 0, "reason": "<why>"}
+        for p in resume_data.get("projects", [])
+    ], indent=2)
+
     prompt = f"""Professional summary:
 {resume_data['summary']['text']}
 
@@ -51,6 +61,9 @@ Work experience:
 Skills:
 {skills_text}
 
+Projects (title | tech stack):
+{projects_text}
+
 Job description:
 {jd}
 
@@ -59,16 +72,18 @@ Return only this JSON, no other text.
 - Rewrite each experience bullet to better match the job description keywords and tone.
 - Reorder skill categories by relevance to the JD (most relevant first). Reorder items within each category by relevance. Return ALL {len(resume_data.get('skills', []))} categories.
 - Suggest skills from the JD that are missing from the resume (suggested_additions may be empty if none).
+- Rank ALL {len(resume_data.get('projects', []))} projects by relevance to the JD (relevance_score 0-100, ordered highest first).
 
 {{
   "summary": {{"suggested": "<rewritten summary>"}},
   "experience": {experience_template},
-  "skills": {skills_template}
+  "skills": {skills_template},
+  "projects": {projects_template}
 }}"""
 
     response = _client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=6000,
+        max_tokens=8000,
         system="You are a resume tailoring assistant. Return only valid JSON. No prose, no markdown, no code fences.",
         messages=[{"role": "user", "content": prompt}],
     )

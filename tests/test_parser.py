@@ -1,4 +1,4 @@
-from backend.parser import parse_summary, parse_experience, parse_skills
+from backend.parser import parse_summary, parse_experience, parse_skills, parse_projects
 
 
 def test_parse_summary_returns_text_and_index():
@@ -62,3 +62,31 @@ def test_parse_skills_known_categories():
     assert any("Programming" in c for c in categories)
     assert any("AI" in c or "ML" in c for c in categories)
     assert any("Web" in c for c in categories)
+
+
+def test_parse_projects_returns_thirteen():
+    projects = parse_projects()
+    assert len(projects) == 13
+
+
+def test_parse_projects_structure():
+    projects = parse_projects()
+    for p in projects:
+        assert isinstance(p["title_paragraph_index"], int)
+        assert isinstance(p["title"], str) and len(p["title"]) > 0
+        assert isinstance(p["tech"], str)
+        assert isinstance(p["bullets"], list)
+
+
+def test_parse_projects_bullet_counts():
+    projects = parse_projects()
+    titles = {p["title"]: len(p["bullets"]) for p in projects}
+    assert titles["LangGraph Stock Pattern Analyzer (FinBot)"] == 4
+    assert titles["Cold Email Generator"] == 5
+    assert titles["AI Creator Studio"] == 5
+
+
+def test_parse_projects_title_indices_unique():
+    projects = parse_projects()
+    indices = [p["title_paragraph_index"] for p in projects]
+    assert len(indices) == len(set(indices))

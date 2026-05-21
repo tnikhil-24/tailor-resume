@@ -55,6 +55,20 @@ def generate(decisions: dict, job_title: str, company: str, source_path: str = N
             else:
                 para.add_run(new_text)
 
+    projects = decisions.get("projects", {})
+    all_projects = projects.get("all_projects", [])
+    selected = set(projects.get("selected_title_paragraph_indices", []))
+    if all_projects and selected:
+        to_delete = []
+        for proj in all_projects:
+            if proj["title_paragraph_index"] not in selected:
+                to_delete.extend(
+                    doc.paragraphs[idx]._element
+                    for idx in proj["all_paragraph_indices"]
+                )
+        for elem in to_delete:
+            elem.getparent().remove(elem)
+
     today = date.today().strftime("%Y-%m-%d")
     safe_company = company.strip().replace(" ", "_")
     safe_title = job_title.strip().replace(" ", "_")

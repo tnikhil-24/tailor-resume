@@ -155,6 +155,73 @@ def test_writer_appends_confirmed_addition():
         os.remove(output_path)
 
 
+def test_writer_deletes_unselected_projects():
+    doc = Document()
+    doc.add_paragraph("Project A | Python")   # idx 0 — title
+    doc.add_paragraph("Bullet A1")             # idx 1
+    doc.add_paragraph("Project B | Java")     # idx 2 — title
+    doc.add_paragraph("Bullet B1")             # idx 3
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "projects": {
+            "all_projects": [
+                {"title_paragraph_index": 0, "all_paragraph_indices": [0, 1]},
+                {"title_paragraph_index": 2, "all_paragraph_indices": [2, 3]},
+            ],
+            "selected_title_paragraph_indices": [0],
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        texts = [p.text for p in result.paragraphs if p.text.strip()]
+        assert "Project A | Python" in texts
+        assert "Bullet A1" in texts
+        assert "Project B | Java" not in texts
+        assert "Bullet B1" not in texts
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
+def test_writer_keeps_selected_projects_in_original_order():
+    doc = Document()
+    doc.add_paragraph("Project A | Python")
+    doc.add_paragraph("Bullet A1")
+    doc.add_paragraph("Project B | Java")
+    doc.add_paragraph("Bullet B1")
+    doc.add_paragraph("Project C | Go")
+    doc.add_paragraph("Bullet C1")
+
+    path = tempfile.mktemp(suffix=".docx")
+    doc.save(path)
+
+    decisions = {
+        "projects": {
+            "all_projects": [
+                {"title_paragraph_index": 0, "all_paragraph_indices": [0, 1]},
+                {"title_paragraph_index": 2, "all_paragraph_indices": [2, 3]},
+                {"title_paragraph_index": 4, "all_paragraph_indices": [4, 5]},
+            ],
+            "selected_title_paragraph_indices": [0, 4],
+        }
+    }
+    output_path = generate(decisions, "SWE", "Google", source_path=path)
+    try:
+        result = Document(output_path)
+        texts = [p.text for p in result.paragraphs if p.text.strip()]
+        assert "Project A | Python" in texts
+        assert "Project C | Go" in texts
+        assert "Project B | Java" not in texts
+        assert texts.index("Project A | Python") < texts.index("Project C | Go")
+    finally:
+        os.remove(path)
+        os.remove(output_path)
+
+
 def test_writer_does_not_modify_base():
     source = make_test_docx("Original summary text.")
     original_mtime = os.path.getmtime(source)
