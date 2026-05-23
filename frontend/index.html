@@ -85,7 +85,7 @@
       </div>
 
       <div class="generate-bar">
-        <button id="generate-btn" onclick="generateResume()" disabled>Generate Tailored Resume</button>
+        <button id="generate-btn" onclick="openChangeSummary()" disabled>Generate Tailored Resume</button>
         <span id="generate-hint" class="hint">Review all sections above to enable</span>
       </div>
     </div>
@@ -106,6 +106,16 @@
         </thead>
         <tbody id="tracker-body"></tbody>
       </table>
+    </div>
+  </div>
+
+  <div id="change-modal" class="modal-backdrop hidden" onclick="handleModalBackdropClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <span id="modal-title" class="modal-title">Change Summary</span>
+        <button class="modal-close" onclick="closeChangeSummary()" aria-label="Close">&times;</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
     </div>
   </div>
 

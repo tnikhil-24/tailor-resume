@@ -434,6 +434,89 @@ async function tailor() {
   }
 }
 
+function openChangeSummary() {
+  document.getElementById("modal-body").innerHTML = buildSummaryHTML();
+  const modal = document.getElementById("change-modal");
+  modal.classList.remove("hidden");
+  document.querySelector(".modal-close").focus();
+}
+
+function closeChangeSummary() {
+  document.getElementById("change-modal").classList.add("hidden");
+  document.getElementById("generate-btn").focus();
+}
+
+function handleModalBackdropClick(e) {
+  if (e.target === document.getElementById("change-modal")) closeChangeSummary();
+}
+
+document.addEventListener("keydown", (e) => {
+  const modal = document.getElementById("change-modal");
+  if (modal.classList.contains("hidden")) return;
+  if (e.key === "Escape") {
+    closeChangeSummary();
+    return;
+  }
+  if (e.key === "Tab") {
+    const focusable = Array.from(modal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+    if (focusable.length === 0) { e.preventDefault(); return; }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
+  }
+});
+
+function buildSummaryHTML() {
+  const s = state;
+  const sections = [];
+
+  // Summary
+  const summaryAccepted = s.decisions.summary?.accepted;
+  sections.push(summaryBlock("Summary", [summaryAccepted ? "Rewrite accepted" : "Original kept"]));
+
+  // Experience — per-role bullet counts
+  const expLines = (s.suggestions.experience || []).map((role) => {
+    let rewritten = 0, kept = 0;
+    for (const bullet of role.bullets) {
+      const dec = (s.decisions.experience || []).find((d) => d.paragraph_index === bullet.paragraph_index);
+      if (dec?.accepted) rewritten++; else kept++;
+    }
+    const parts = [];
+    if (rewritten > 0) parts.push(`${rewritten} bullet${rewritten !== 1 ? "s" : ""} rewritten`);
+    if (kept > 0) parts.push(`${kept} kept original`);
+    return `${escapeHtml(role.company)} — ${parts.join(", ")}`;
+  });
+  sections.push(summaryBlock("Experience", expLines));
+
+  // Skills — accepted additions
+  const additions = (s.decisions.skills?.additions || []).filter((a) => a.added);
+  sections.push(summaryBlock("Skills", additions.length > 0
+    ? additions.map((a) => escapeHtml(`${a.skill} → ${a.category}`))
+    : ["None added"]));
+
+  // Projects — selected titles
+  const selected = (s.suggestions.projects || []).filter((p) => s.selectedProjects.has(p.title_paragraph_index));
+  sections.push(summaryBlock("Projects", selected.map((p) => escapeHtml(p.title))));
+
+  // Sections removed
+  const removed = Object.entries(s.decisions.optional_sections || {})
+    .filter(([, v]) => !v.keep)
+    .map(([k]) => OPTIONAL_LABELS[k] || k);
+  sections.push(summaryBlock("Sections removed", removed.length > 0 ? removed.map(escapeHtml) : ["None removed"]));
+
+  return sections.join("");
+}
+
+function summaryBlock(title, lines) {
+  return `<div class="modal-section">
+    <div class="modal-section-title">${title}</div>
+    ${lines.map((l) => `<div class="modal-section-line">${l}</div>`).join("")}
+  </div>`;
+}
+
 async function generateResume() {
   const btn = document.getElementById("generate-btn");
   btn.disabled = true;
