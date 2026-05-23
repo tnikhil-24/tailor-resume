@@ -46,14 +46,26 @@ def generate(decisions: dict, job_title: str, company: str, source_path: str = N
             target_idx = paragraph_indices[i]
             para = doc.paragraphs[target_idx]
             items = list(cat_data["items"]) + additions_by_category.get(cat_data["category"], [])
-            new_text = f"{cat_data['category']}: {', '.join(items)}"
+            prefix = "\t" if para.text.startswith("\t") else ""
+            bold_text = f"{prefix}{cat_data['category']}"
+            normal_text = f": {', '.join(items)}"
             runs = para.runs
+            for run in runs[2:]:
+                run.text = ""
             if runs:
-                runs[0].text = new_text
-                for run in runs[1:]:
-                    run.text = ""
+                runs[0].text = bold_text
+                runs[0].bold = True
+                if len(runs) >= 2:
+                    runs[1].text = normal_text
+                    runs[1].bold = False
+                else:
+                    r = para.add_run(normal_text)
+                    r.bold = False
             else:
-                para.add_run(new_text)
+                r1 = para.add_run(bold_text)
+                r1.bold = True
+                r2 = para.add_run(normal_text)
+                r2.bold = False
 
     # Collect all paragraph elements to delete in one pass before any deletion
     to_delete = []
