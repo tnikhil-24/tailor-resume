@@ -10,6 +10,9 @@ from .parser import parse_summary, parse_experience, parse_skills, parse_project
 from .llm import get_suggestions
 from .writer import generate
 from .db import init_db, insert_application, get_all_applications, update_application
+from .cover_letter import generate_cover_letter
+
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 app = FastAPI()
 
@@ -129,11 +132,38 @@ def generate_resume(req: GenerateRequest):
     output_path = generate(req.decisions, req.job_title, req.company)
     filename = os.path.basename(output_path)
     insert_application(req.company, req.job_title, req.jd, filename)
+
+    headers = {}
+    if req.generate_cover_letter:
+        summary_dec = req.decisions.get("summary", {})
+        accepted_summary = summary_dec.get("suggested") if summary_dec.get("accepted") else parse_summary()["text"]
+        accepted_bullets = [
+            d["suggested"]
+            for d in req.decisions.get("experience", [])
+            if d.get("accepted") and d.get("suggested")
+        ]
+        cl_path = generate_cover_letter(req.company, req.job_title, req.jd, accepted_summary, accepted_bullets)
+        headers["X-Cover-Letter-Filename"] = os.path.basename(cl_path)
+
     return FileResponse(
         output_path,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=filename,
+        headers=headers,
     )
+
+
+@app.get("/download/{filename}")
+def download_generated_file(filename: str):
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not (filename.endswith(".docx") or filename.endswith(".txt")):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    path = os.path.join(_PROJECT_ROOT, filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    media_type = "text/plain; charset=utf-8" if filename.endswith(".txt") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    return FileResponse(path, filename=filename, media_type=media_type)
 
 
 _VALID_STATUSES = {"Applied", "Interviewing", "Offer", "Rejected"}

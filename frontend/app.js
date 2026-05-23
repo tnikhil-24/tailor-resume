@@ -559,6 +559,20 @@ async function modalDownload() {
     a.click();
     URL.revokeObjectURL(url);
 
+    const clFilename = res.headers.get("x-cover-letter-filename");
+    if (clFilename) {
+      const clRes = await fetch(`/download/${encodeURIComponent(clFilename)}`);
+      if (clRes.ok) {
+        const clBlob = await clRes.blob();
+        const clUrl = URL.createObjectURL(clBlob);
+        const clA = document.createElement("a");
+        clA.href = clUrl;
+        clA.download = clFilename;
+        clA.click();
+        URL.revokeObjectURL(clUrl);
+      }
+    }
+
     closeChangeSummary();
   } catch (err) {
     errorEl.textContent = err.message;
