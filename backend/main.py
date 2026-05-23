@@ -56,7 +56,7 @@ def tailor(req: TailorRequest):
         "projects": projects,
         "optional_sections": optional_sections,
     }
-    suggestions = get_suggestions(resume_data, req.jd)
+    suggestions = get_suggestions(resume_data, req.jd, req.tone)
 
     original_bullets = {
         b["paragraph_index"]: b["text"]

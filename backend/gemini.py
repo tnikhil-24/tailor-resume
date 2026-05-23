@@ -9,7 +9,14 @@ load_dotenv()
 _client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 
-def get_suggestions(resume_data: dict, jd: str) -> dict:
+_TONE_INSTRUCTIONS = {
+    "Results-Driven": "Write the summary to emphasise measurable impact and quantifiable outcomes.",
+    "Research-Oriented": "Write the summary to highlight academic rigour, publications, and research contributions.",
+    "Startup-Focused": "Write the summary to convey ownership, scrappiness, and ability to operate in ambiguous fast-moving environments.",
+}
+
+
+def get_suggestions(resume_data: dict, jd: str, tone: str = "Concise & Technical") -> dict:
     # Build experience text
     experience_text = ""
     for role in resume_data.get("experience", []):
@@ -64,6 +71,9 @@ def get_suggestions(resume_data: dict, jd: str) -> dict:
         for p in resume_data.get("projects", [])
     ], indent=2)
 
+    tone_instruction = _TONE_INSTRUCTIONS.get(tone, "")
+    summary_line = "- Rewrite the summary to target this specific job." + (f" {tone_instruction}" if tone_instruction else "")
+
     prompt = f"""Professional summary:
 {resume_data['summary']['text']}
 
@@ -83,7 +93,7 @@ Job description:
 {jd}
 
 Return only this JSON, no other text.
-- Rewrite the summary to target this specific job.
+{summary_line}
 - Rewrite each experience bullet to better match the job description keywords and tone.
 - Reorder skill categories by relevance to the JD (most relevant first). Reorder items within each category by relevance. Return ALL {len(resume_data.get('skills', []))} categories.
 - Suggest skills from the JD that are missing from the resume (suggested_additions may be empty if none).
