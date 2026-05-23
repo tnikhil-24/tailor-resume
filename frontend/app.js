@@ -105,6 +105,7 @@ async function loadTracker() {
             onblur="patchNotes(${a.id}, this.value)"
             onkeydown="if(event.key==='Enter')event.preventDefault()" /></td>
           <td>${escapeHtml(a.resume_filename)}</td>
+          <td>${escapeHtml(a.cover_letter_filename || "—")}</td>
         </tr>`
       )
       .join("");

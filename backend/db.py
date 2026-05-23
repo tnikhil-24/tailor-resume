@@ -28,12 +28,12 @@ def init_db():
         conn.execute(_SCHEMA)
 
 
-def insert_application(company: str, job_title: str, jd_text: str, resume_filename: str):
+def insert_application(company: str, job_title: str, jd_text: str, resume_filename: str, cover_letter_filename: str = None):
     today = date.today().strftime("%Y-%m-%d")
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO applications (company, job_title, jd_text, resume_filename, date_applied) VALUES (?, ?, ?, ?, ?)",
-            (company, job_title, jd_text, resume_filename, today),
+            "INSERT INTO applications (company, job_title, jd_text, resume_filename, cover_letter_filename, date_applied) VALUES (?, ?, ?, ?, ?, ?)",
+            (company, job_title, jd_text, resume_filename, cover_letter_filename, today),
         )
 
 

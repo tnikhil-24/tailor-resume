@@ -131,8 +131,8 @@ def tailor(req: TailorRequest):
 def generate_resume(req: GenerateRequest):
     output_path = generate(req.decisions, req.job_title, req.company)
     filename = os.path.basename(output_path)
-    insert_application(req.company, req.job_title, req.jd, filename)
 
+    cl_filename = None
     headers = {}
     if req.generate_cover_letter:
         summary_dec = req.decisions.get("summary", {})
@@ -143,7 +143,10 @@ def generate_resume(req: GenerateRequest):
             if d.get("accepted") and d.get("suggested")
         ]
         cl_path = generate_cover_letter(req.company, req.job_title, req.jd, accepted_summary, accepted_bullets)
-        headers["X-Cover-Letter-Filename"] = os.path.basename(cl_path)
+        cl_filename = os.path.basename(cl_path)
+        headers["X-Cover-Letter-Filename"] = cl_filename
+
+    insert_application(req.company, req.job_title, req.jd, filename, cl_filename)
 
     return FileResponse(
         output_path,
