@@ -379,6 +379,41 @@ button:hover:not(:disabled) {
   padding: 3rem 0;
 }
 
+#tracker-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+#tracker-table th {
+  background: #f8f8f8;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.8rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#tracker-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+#tracker-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#tracker-table tbody tr:hover td {
+  background: #fafafa;
+}
+
 /* Gaps */
 #gaps-content {
   display: flex;

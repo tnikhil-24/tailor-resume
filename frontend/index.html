@@ -92,7 +92,20 @@
     </div>
 
     <div id="tracker-view" class="hidden">
-      <p class="tracker-placeholder">Coming soon</p>
+      <p id="tracker-empty" class="tracker-placeholder hidden">No applications yet</p>
+      <table id="tracker-table" class="hidden">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Job Title</th>
+            <th>Date Applied</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Resume File</th>
+          </tr>
+        </thead>
+        <tbody id="tracker-body"></tbody>
+      </table>
     </div>
   </div>
 

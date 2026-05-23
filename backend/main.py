@@ -9,7 +9,7 @@ from .config import RESUME_PATH
 from .parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
 from .llm import get_suggestions
 from .writer import generate
-from .db import init_db, insert_application
+from .db import init_db, insert_application, get_all_applications
 
 app = FastAPI()
 
@@ -127,6 +127,11 @@ def generate_resume(req: GenerateRequest):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=filename,
     )
+
+
+@app.get("/applications")
+def list_applications():
+    return get_all_applications()
 
 
 frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")

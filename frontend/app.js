@@ -14,6 +14,41 @@ function switchTab(tab) {
   document.getElementById("tracker-view").classList.toggle("hidden", tab !== "tracker");
   document.querySelector(".tab-btn[data-tab='tailor']").classList.toggle("active", tab === "tailor");
   document.querySelector(".tab-btn[data-tab='tracker']").classList.toggle("active", tab === "tracker");
+  if (tab === "tracker") loadTracker();
+}
+
+async function loadTracker() {
+  try {
+    const res = await fetch("/applications");
+    if (!res.ok) throw new Error(await res.text());
+    const apps = await res.json();
+
+    const table = document.getElementById("tracker-table");
+    const empty = document.getElementById("tracker-empty");
+
+    if (apps.length === 0) {
+      table.classList.add("hidden");
+      empty.classList.remove("hidden");
+      return;
+    }
+
+    document.getElementById("tracker-body").innerHTML = apps
+      .map(
+        (a) => `<tr>
+          <td>${escapeHtml(a.company)}</td>
+          <td>${escapeHtml(a.job_title)}</td>
+          <td>${escapeHtml(a.date_applied)}</td>
+          <td>${escapeHtml(a.status)}</td>
+          <td>${escapeHtml(a.notes || "")}</td>
+          <td>${escapeHtml(a.resume_filename)}</td>
+        </tr>`
+      )
+      .join("");
+    empty.classList.add("hidden");
+    table.classList.remove("hidden");
+  } catch (err) {
+    console.error("Failed to load tracker:", err);
+  }
 }
 
 function escapeHtml(text) {
