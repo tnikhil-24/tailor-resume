@@ -17,6 +17,19 @@ function switchTab(tab) {
   if (tab === "tracker") loadTracker();
 }
 
+async function patchStatus(id, status) {
+  try {
+    const res = await fetch(`/applications/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+  } catch (err) {
+    console.error("Failed to update status:", err);
+  }
+}
+
 async function loadTracker() {
   try {
     const res = await fetch("/applications");
@@ -32,13 +45,16 @@ async function loadTracker() {
       return;
     }
 
+    const STATUSES = ["Applied", "Interviewing", "Offer", "Rejected"];
     document.getElementById("tracker-body").innerHTML = apps
       .map(
         (a) => `<tr>
           <td>${escapeHtml(a.company)}</td>
           <td>${escapeHtml(a.job_title)}</td>
           <td>${escapeHtml(a.date_applied)}</td>
-          <td>${escapeHtml(a.status)}</td>
+          <td><select class="status-select" onchange="patchStatus(${a.id}, this.value)">
+            ${STATUSES.map((s) => `<option value="${s}"${a.status === s ? " selected" : ""}>${s}</option>`).join("")}
+          </select></td>
           <td>${escapeHtml(a.notes || "")}</td>
           <td>${escapeHtml(a.resume_filename)}</td>
         </tr>`

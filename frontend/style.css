@@ -414,6 +414,22 @@ button:hover:not(:disabled) {
   background: #fafafa;
 }
 
+.status-select {
+  border: 1px solid #d0d0d0;
+  border-radius: 5px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #555;
+}
+
 /* Gaps */
 #gaps-content {
   display: flex;

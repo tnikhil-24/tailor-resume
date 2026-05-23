@@ -2,14 +2,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Optional
 import os
 
 from .config import RESUME_PATH
 from .parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
 from .llm import get_suggestions
 from .writer import generate
-from .db import init_db, insert_application, get_all_applications
+from .db import init_db, insert_application, get_all_applications, update_application
 
 app = FastAPI()
 
@@ -129,9 +129,31 @@ def generate_resume(req: GenerateRequest):
     )
 
 
+_VALID_STATUSES = {"Applied", "Interviewing", "Offer", "Rejected"}
+
+
+class ApplicationPatch(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
 @app.get("/applications")
 def list_applications():
     return get_all_applications()
+
+
+@app.patch("/applications/{app_id}")
+def patch_application(app_id: int, patch: ApplicationPatch):
+    fields = {}
+    if patch.status is not None:
+        if patch.status not in _VALID_STATUSES:
+            raise HTTPException(status_code=422, detail=f"Invalid status: {patch.status!r}")
+        fields["status"] = patch.status
+    if patch.notes is not None:
+        fields["notes"] = patch.notes
+    if fields:
+        update_application(app_id, **fields)
+    return {"ok": True}
 
 
 frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
