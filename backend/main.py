@@ -37,6 +37,7 @@ class GenerateRequest(BaseModel):
     job_title: str
     company: str
     jd: str = ""
+    generate_cover_letter: bool = False
 
 
 @app.post("/tailor")

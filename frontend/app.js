@@ -541,6 +541,7 @@ async function modalDownload() {
         job_title: state.job_title,
         company: state.company,
         jd: state.jd,
+        generate_cover_letter: document.getElementById("cover-letter-cb").checked,
       }),
     });
 

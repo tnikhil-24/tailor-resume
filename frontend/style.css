@@ -446,6 +446,23 @@ button:hover:not(:disabled) {
   background: #248f52;
 }
 
+/* Cover letter checkbox */
+.cover-letter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.cover-letter-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
 /* Tone pills */
 .tone-pills {
   display: flex;
