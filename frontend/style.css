@@ -641,6 +641,47 @@ button:hover:not(:disabled) {
   overflow-y: auto;
 }
 
+/* Skeleton loaders */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+#skeleton-loaders {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-header-bar {
+  height: 14px;
+  width: 32%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: 0.25rem;
+}
+
+.skeleton-bar {
+  height: 11px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
 /* Gaps */
 #gaps-content {
   display: flex;

@@ -22,6 +22,13 @@ function switchTab(tab) {
   document.querySelector(".tab-btn[data-tab='tailor']").classList.toggle("active", tab === "tailor");
   document.querySelector(".tab-btn[data-tab='tracker']").classList.toggle("active", tab === "tracker");
   if (tab === "tracker") loadTracker();
+  if (tab === "tailor") {
+    const skeletons = document.getElementById("skeleton-loaders");
+    if (!skeletons.classList.contains("hidden")) {
+      skeletons.classList.add("hidden");
+      document.querySelector(".form").classList.remove("hidden");
+    }
+  }
 }
 
 let _expandedJDId = null;
@@ -398,6 +405,10 @@ async function tailor() {
   btn.disabled = true;
   btn.textContent = "Tailoring...";
 
+  document.querySelector(".form").classList.add("hidden");
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("skeleton-loaders").classList.remove("hidden");
+
   try {
     const res = await fetch("/tailor", {
       method: "POST",
@@ -428,12 +439,15 @@ async function tailor() {
     renderOptionalSections(state.suggestions.optional_sections);
     renderGaps(state.suggestions.gaps);
 
+    document.getElementById("skeleton-loaders").classList.add("hidden");
     document.getElementById("results").classList.remove("hidden");
     document.getElementById("generate-btn").disabled = true;
     document.getElementById("generate-hint").classList.remove("hidden");
 
     document.getElementById("results").scrollIntoView({ behavior: "smooth" });
   } catch (err) {
+    document.getElementById("skeleton-loaders").classList.add("hidden");
+    document.querySelector(".form").classList.remove("hidden");
     console.error(err);
     alert("Error: " + err.message);
   } finally {
