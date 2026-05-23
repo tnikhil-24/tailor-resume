@@ -95,7 +95,7 @@ Return only this JSON, no other text.
 - Rewrite each experience bullet to better match the job description keywords and tone.
 - Reorder skill categories by relevance to the JD (most relevant first). Reorder items within each category by relevance. Return ALL {len(resume_data.get('skills', []))} categories.
 - Suggest skills from the JD that are missing from the resume (suggested_additions may be empty if none).
-- Rank ALL {len(resume_data.get('projects', []))} projects by relevance to the JD (relevance_score 0-100, ordered highest first).
+- Rank ALL {len(resume_data.get('projects', []))} projects by relevance to the JD (relevance_score 0-100, ordered highest first). The user may include up to 6.
 - For each optional section, recommend keep or drop based on JD relevance and one-page constraint.
 - List any JD-required skills or keywords completely absent from the resume in gaps (may be empty).
 

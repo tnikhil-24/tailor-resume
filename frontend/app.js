@@ -191,7 +191,7 @@ function toggleProject(titleParagraphIndex) {
 
   const count = state.selectedProjects.size;
   document.getElementById("projects-counter").textContent =
-    count === 0 ? "Select 1–3" : `${count} selected`;
+    count === 0 ? "Select 1–6" : `${count} selected`;
 
   state.decisions.projects = {
     all_projects: state.suggestions.projects.map((p) => ({
@@ -221,7 +221,7 @@ function checkGenerateReady() {
   const summaryDone = state.decisions.summary !== undefined;
   const decidedBullets = (state.decisions.experience || []).length;
   const decidedAdditions = (state.decisions.skills?.additions || []).length;
-  const projectsOk = state.selectedProjects.size >= 1 && state.selectedProjects.size <= 3;
+  const projectsOk = state.selectedProjects.size >= 1 && state.selectedProjects.size <= 6;
   const optionalKeys = Object.keys(state.suggestions?.optional_sections || {});
   const decidedOptional = Object.keys(state.decisions.optional_sections || {}).length;
   const optionalDone = decidedOptional === optionalKeys.length;
@@ -329,7 +329,7 @@ function renderProjects(projects) {
       </div>`
     )
     .join("");
-  document.getElementById("projects-counter").textContent = "Select 1–3";
+  document.getElementById("projects-counter").textContent = "Select 1–6";
   document.getElementById("projects-section").classList.remove("hidden");
 }
 
