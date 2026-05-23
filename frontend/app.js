@@ -17,6 +17,32 @@ function switchTab(tab) {
   if (tab === "tracker") loadTracker();
 }
 
+let _expandedJDId = null;
+
+function toggleJD(id) {
+  const existingExpander = document.getElementById(`jd-row-${id}`);
+
+  // Collapse any open row
+  if (_expandedJDId !== null) {
+    const open = document.getElementById(`jd-row-${_expandedJDId}`);
+    if (open) open.remove();
+    _expandedJDId = null;
+    if (existingExpander) return; // was same row — just collapse
+  }
+
+  // Expand this row
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  const colCount = row.cells.length;
+  const jdText = row.dataset.jd;
+
+  const expandRow = document.createElement("tr");
+  expandRow.id = `jd-row-${id}`;
+  expandRow.className = "jd-expand-row";
+  expandRow.innerHTML = `<td colspan="${colCount}"><pre class="jd-pre">${escapeHtml(jdText)}</pre></td>`;
+  row.after(expandRow);
+  _expandedJDId = id;
+}
+
 async function patchNotes(id, notes) {
   try {
     const res = await fetch(`/applications/${id}`, {
@@ -61,8 +87,8 @@ async function loadTracker() {
     const STATUSES = ["Applied", "Interviewing", "Offer", "Rejected"];
     document.getElementById("tracker-body").innerHTML = apps
       .map(
-        (a) => `<tr>
-          <td>${escapeHtml(a.company)}</td>
+        (a) => `<tr data-id="${a.id}" data-jd="${escapeHtml(a.jd_text || "")}">
+          <td class="company-cell" onclick="toggleJD(${a.id})">${escapeHtml(a.company)}</td>
           <td>${escapeHtml(a.job_title)}</td>
           <td>${escapeHtml(a.date_applied)}</td>
           <td><select class="status-select" onchange="patchStatus(${a.id}, this.value)">
