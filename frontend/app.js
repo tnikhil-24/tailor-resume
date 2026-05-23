@@ -1,6 +1,7 @@
 const state = {
   job_title: "",
   company: "",
+  jd: "",
   suggestions: null,
   decisions: {},
   totalBullets: 0,
@@ -287,6 +288,7 @@ async function tailor() {
 
   state.job_title = job_title;
   state.company = company;
+  state.jd = jd;
   state.decisions = { optional_sections: {} };
   state.totalBullets = 0;
   state.totalAdditions = 0;
@@ -353,6 +355,7 @@ async function generateResume() {
         decisions: state.decisions,
         job_title: state.job_title,
         company: state.company,
+        jd: state.jd,
       }),
     });
 

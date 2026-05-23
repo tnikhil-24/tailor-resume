@@ -9,6 +9,7 @@ from .config import RESUME_PATH
 from .parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
 from .llm import get_suggestions
 from .writer import generate
+from .db import init_db, insert_application
 
 app = FastAPI()
 
@@ -20,16 +21,18 @@ class TailorRequest(BaseModel):
 
 
 @app.on_event("startup")
-def check_resume():
+def startup():
     path = os.path.abspath(RESUME_PATH)
     assert os.path.exists(path), f"Resume not found at {path}"
     print(f"Base resume loaded: {path}")
+    init_db()
 
 
 class GenerateRequest(BaseModel):
     decisions: dict[str, Any]
     job_title: str
     company: str
+    jd: str = ""
 
 
 @app.post("/tailor")
@@ -118,6 +121,7 @@ def tailor(req: TailorRequest):
 def generate_resume(req: GenerateRequest):
     output_path = generate(req.decisions, req.job_title, req.company)
     filename = os.path.basename(output_path)
+    insert_application(req.company, req.job_title, req.jd, filename)
     return FileResponse(
         output_path,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
