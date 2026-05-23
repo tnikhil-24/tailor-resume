@@ -14,10 +14,14 @@ from .db import init_db, insert_application, get_all_applications, update_applic
 app = FastAPI()
 
 
+_VALID_TONES = {"Concise & Technical", "Results-Driven", "Research-Oriented", "Startup-Focused"}
+
+
 class TailorRequest(BaseModel):
     jd: str
     job_title: str
     company: str
+    tone: str = "Concise & Technical"
 
 
 @app.on_event("startup")
@@ -37,6 +41,8 @@ class GenerateRequest(BaseModel):
 
 @app.post("/tailor")
 def tailor(req: TailorRequest):
+    if req.tone not in _VALID_TONES:
+        raise HTTPException(status_code=422, detail=f"Invalid tone: {req.tone!r}")
     summary = parse_summary()
     experience = parse_experience()
     skills = parse_skills()

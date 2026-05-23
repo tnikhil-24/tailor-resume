@@ -446,6 +446,41 @@ button:hover:not(:disabled) {
   background: #248f52;
 }
 
+/* Tone pills */
+.tone-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tone-pill {
+  background: none;
+  border: 1px solid #d0d0d0;
+  color: #555;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: 20px;
+  cursor: pointer;
+  align-self: auto;
+}
+
+.tone-pill:hover:not(:disabled) {
+  border-color: #2a9d5c;
+  color: #2a9d5c;
+  background: none;
+}
+
+.tone-pill.active {
+  background: #2a9d5c;
+  border-color: #2a9d5c;
+  color: #fff;
+}
+
+.tone-pill.active:hover:not(:disabled) {
+  background: #248f52;
+  border-color: #248f52;
+}
+
 /* Nav tabs */
 .nav-tabs {
   display: flex;

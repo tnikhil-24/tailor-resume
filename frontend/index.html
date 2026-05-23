@@ -33,6 +33,16 @@
         <textarea id="jd" rows="12" placeholder="Paste the full job description here..."></textarea>
       </div>
 
+      <div class="field">
+        <label>Tone</label>
+        <div class="tone-pills">
+          <button class="tone-pill active" data-tone="Concise &amp; Technical" onclick="selectTone(this)">Concise &amp; Technical</button>
+          <button class="tone-pill" data-tone="Results-Driven" onclick="selectTone(this)">Results-Driven</button>
+          <button class="tone-pill" data-tone="Research-Oriented" onclick="selectTone(this)">Research-Oriented</button>
+          <button class="tone-pill" data-tone="Startup-Focused" onclick="selectTone(this)">Startup-Focused</button>
+        </div>
+      </div>
+
       <button id="tailor-btn" onclick="tailor()">Tailor Resume</button>
     </div>
 

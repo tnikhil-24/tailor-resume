@@ -2,12 +2,19 @@ const state = {
   job_title: "",
   company: "",
   jd: "",
+  tone: "Concise & Technical",
   suggestions: null,
   decisions: {},
   totalBullets: 0,
   totalAdditions: 0,
   selectedProjects: new Set(),
 };
+
+function selectTone(btn) {
+  document.querySelectorAll(".tone-pill").forEach((p) => p.classList.remove("active"));
+  btn.classList.add("active");
+  state.tone = btn.dataset.tone;
+}
 
 function switchTab(tab) {
   document.getElementById("tailor-view").classList.toggle("hidden", tab !== "tailor");
@@ -394,7 +401,7 @@ async function tailor() {
     const res = await fetch("/tailor", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jd, job_title, company }),
+      body: JSON.stringify({ jd, job_title, company, tone: state.tone }),
     });
 
     if (!res.ok) throw new Error(await res.text());
