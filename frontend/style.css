@@ -430,6 +430,28 @@ button:hover:not(:disabled) {
   border-color: #555;
 }
 
+.notes-input {
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  width: 100%;
+  min-width: 140px;
+  background: transparent;
+  color: #1a1a1a;
+}
+
+.notes-input:hover {
+  border-color: #d0d0d0;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: #555;
+  background: #fff;
+}
+
 /* Gaps */
 #gaps-content {
   display: flex;

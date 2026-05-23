@@ -17,6 +17,19 @@ function switchTab(tab) {
   if (tab === "tracker") loadTracker();
 }
 
+async function patchNotes(id, notes) {
+  try {
+    const res = await fetch(`/applications/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+  } catch (err) {
+    console.error("Failed to update notes:", err);
+  }
+}
+
 async function patchStatus(id, status) {
   try {
     const res = await fetch(`/applications/${id}`, {
@@ -55,7 +68,9 @@ async function loadTracker() {
           <td><select class="status-select" onchange="patchStatus(${a.id}, this.value)">
             ${STATUSES.map((s) => `<option value="${s}"${a.status === s ? " selected" : ""}>${s}</option>`).join("")}
           </select></td>
-          <td>${escapeHtml(a.notes || "")}</td>
+          <td><input class="notes-input" type="text" value="${escapeHtml(a.notes || "")}"
+            onblur="patchNotes(${a.id}, this.value)"
+            onkeydown="if(event.key==='Enter')event.preventDefault()" /></td>
           <td>${escapeHtml(a.resume_filename)}</td>
         </tr>`
       )
