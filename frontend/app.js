@@ -517,10 +517,13 @@ function summaryBlock(title, lines) {
   </div>`;
 }
 
-async function generateResume() {
-  const btn = document.getElementById("generate-btn");
+async function modalDownload() {
+  const btn = document.getElementById("modal-download-btn");
+  const errorEl = document.getElementById("modal-error");
+
   btn.disabled = true;
-  btn.textContent = "Generating...";
+  btn.textContent = "Downloading...";
+  errorEl.classList.add("hidden");
 
   try {
     const res = await fetch("/generate", {
@@ -547,11 +550,13 @@ async function generateResume() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+
+    closeChangeSummary();
   } catch (err) {
-    console.error(err);
-    alert("Error: " + err.message);
+    errorEl.textContent = err.message;
+    errorEl.classList.remove("hidden");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Generate Tailored Resume";
+    btn.textContent = "Download Resume";
   }
 }

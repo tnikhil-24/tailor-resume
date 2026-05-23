@@ -421,6 +421,31 @@ button:hover:not(:disabled) {
   line-height: 1.5;
 }
 
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.modal-error {
+  font-size: 0.85rem;
+  color: #c0392b;
+  flex: 1;
+}
+
+#modal-download-btn {
+  background: #2a9d5c;
+  align-self: auto;
+}
+
+#modal-download-btn:hover:not(:disabled) {
+  background: #248f52;
+}
+
 /* Nav tabs */
 .nav-tabs {
   display: flex;
