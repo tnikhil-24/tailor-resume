@@ -7,7 +7,7 @@ import os
 
 from .config import RESUME_PATH
 from .parser import parse_summary, parse_experience, parse_skills, parse_projects, parse_optional_sections
-from .claude import get_suggestions
+from .llm import get_suggestions
 from .writer import generate
 
 app = FastAPI()
