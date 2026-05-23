@@ -10,6 +10,12 @@
   <div class="container">
     <h1>Resume Tailor</h1>
 
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="tailor" onclick="switchTab('tailor')">Tailor</button>
+      <button class="tab-btn" data-tab="tracker" onclick="switchTab('tracker')">Tracker</button>
+    </nav>
+
+    <div id="tailor-view">
     <div class="form">
       <div class="row">
         <div class="field">
@@ -82,6 +88,11 @@
         <button id="generate-btn" onclick="generateResume()" disabled>Generate Tailored Resume</button>
         <span id="generate-hint" class="hint">Review all sections above to enable</span>
       </div>
+    </div>
+    </div>
+
+    <div id="tracker-view" class="hidden">
+      <p class="tracker-placeholder">Coming soon</p>
     </div>
   </div>
 

@@ -339,6 +339,46 @@ button:hover:not(:disabled) {
   line-height: 1.5;
 }
 
+/* Nav tabs */
+.nav-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  align-self: auto;
+}
+
+.tab-btn:hover:not(:disabled) {
+  background: #ebebeb;
+  color: #1a1a1a;
+}
+
+.tab-btn.active {
+  background: #2a9d5c;
+  color: #fff;
+}
+
+.tab-btn.active:hover:not(:disabled) {
+  background: #248f52;
+}
+
+.tracker-placeholder {
+  color: #888;
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 3rem 0;
+}
+
 /* Gaps */
 #gaps-content {
   display: flex;

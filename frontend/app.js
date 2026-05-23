@@ -8,6 +8,13 @@ const state = {
   selectedProjects: new Set(),
 };
 
+function switchTab(tab) {
+  document.getElementById("tailor-view").classList.toggle("hidden", tab !== "tailor");
+  document.getElementById("tracker-view").classList.toggle("hidden", tab !== "tracker");
+  document.querySelector(".tab-btn[data-tab='tailor']").classList.toggle("active", tab === "tailor");
+  document.querySelector(".tab-btn[data-tab='tracker']").classList.toggle("active", tab === "tracker");
+}
+
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
