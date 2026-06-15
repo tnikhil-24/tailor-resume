@@ -125,5 +125,14 @@ Return only this JSON, no other text.
 
     text = response.text
     start = text.find("{")
-    end = text.rfind("}") + 1
+    depth = 0
+    end = start
+    for i, ch in enumerate(text[start:], start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
     return json.loads(text[start:end])
