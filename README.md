@@ -1,6 +1,6 @@
 # Resume Tailor
 
-A self-hosted tool that tailors a resume to a specific job description. It parses an existing `.docx` resume, sends each section to an LLM for rewrite/ranking suggestions, lets you accept or reject each change with a side-by-side diff, then generates a new tailored `.docx` (and optional cover letter) — while automatically logging the application to a local tracker.
+A self-hosted tool that will tailors a resume to a specific job description. It parses an existing `.docx` resume, sends each section to an LLM for rewrite/ranking suggestions, lets you accept or reject each change with a side-by-side diff, then generates a new tailored `.docx` (and optional cover letter) — while automatically logging the application to a local tracker.
 
 ## Features
 
