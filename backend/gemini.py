@@ -1,12 +1,17 @@
 import json
 import os
+import random
+import time
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 from dotenv import load_dotenv
 
 load_dotenv()
 
 _client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
+_MAX_ATTEMPTS = 2
+_RETRY_BASE_DELAY_SECONDS = 2
 
 
 _TONE_INSTRUCTIONS = {
@@ -114,14 +119,21 @@ Return only this JSON, no other text.
   "gaps": ["<skill or keyword from JD not in resume>"]
 }}"""
 
-    response = _client.models.generate_content(
-        model="gemini-3.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            system_instruction="You are a resume tailoring assistant. Return only valid JSON. No prose, no markdown, no code fences.",
-        ),
-    )
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            response = _client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    system_instruction="You are a resume tailoring assistant. Return only valid JSON. No prose, no markdown, no code fences.",
+                ),
+            )
+            break
+        except errors.ServerError:
+            if attempt == _MAX_ATTEMPTS:
+                raise
+            time.sleep(_RETRY_BASE_DELAY_SECONDS + random.uniform(0, 1))
 
     text = response.text
     start = text.find("{")
