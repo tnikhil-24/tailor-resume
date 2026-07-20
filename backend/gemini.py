@@ -6,136 +6,58 @@ from google import genai
 from google.genai import errors, types
 from dotenv import load_dotenv
 
+from .prompts import (
+    build_suggestions_prompt,
+    build_cover_letter_prompt,
+    SUGGESTIONS_SYSTEM_PROMPT,
+    COVER_LETTER_SYSTEM_PROMPT,
+)
+from .cover_letter import save_cover_letter
+
 load_dotenv()
 
 _client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-_MAX_ATTEMPTS = 2
+_MAX_ATTEMPTS = 5
 _RETRY_BASE_DELAY_SECONDS = 2
+_RETRY_MAX_DELAY_SECONDS = 30
 
 
-_TONE_INSTRUCTIONS = {
-    "Results-Driven": "Write the summary to emphasise measurable impact and quantifiable outcomes.",
-    "Research-Oriented": "Write the summary to highlight academic rigour, publications, and research contributions.",
-    "Startup-Focused": "Write the summary to convey ownership, scrappiness, and ability to operate in ambiguous fast-moving environments.",
-}
+def _response_text(response) -> str:
+    # response.text raises if the response was blocked / has no candidates.
+    try:
+        return (response.text or "").strip()
+    except Exception:
+        return ""
 
 
-def get_suggestions(resume_data: dict, jd: str, tone: str = "Concise & Technical") -> dict:
-    # Build experience text
-    experience_text = ""
-    for role in resume_data.get("experience", []):
-        experience_text += f"\n[{role['company']}]\n"
-        for b in role["bullets"]:
-            experience_text += f"  (idx:{b['paragraph_index']}) {b['text']}\n"
+def _generate_with_retry(prompt: str, system_instruction: str, json_mode: bool):
+    config_kwargs = {"system_instruction": system_instruction}
+    if json_mode:
+        config_kwargs["response_mime_type"] = "application/json"
 
-    # Build skills text
-    skills_text = ""
-    for s in resume_data.get("skills", []):
-        skills_text += f"  (idx:{s['paragraph_index']}) {s['category']}: {', '.join(s['items'])}\n"
-
-    # Build projects text (titles + tech only — no bullets to stay within token budget)
-    projects_text = ""
-    for p in resume_data.get("projects", []):
-        projects_text += f"  (idx:{p['title_paragraph_index']}) {p['title']} | {p['tech']}\n"
-
-    # Build optional sections text
-    opt = resume_data.get("optional_sections", {})
-    optional_text = ""
-    for key, label in [("research_paper", "Research Paper"), ("achievements", "Achievements"), ("certifications", "Certifications")]:
-        section = opt.get(key, {})
-        if section:
-            optional_text += f"[{label}]\n"
-            for t in section.get("texts", []):
-                optional_text += f"  {t}\n"
-
-    # Build JSON templates for response
-    experience_template = json.dumps([
-        {
-            "company": role["company"],
-            "bullets": [
-                {"paragraph_index": b["paragraph_index"], "suggested": "<rewrite>", "reason": "<reason>"}
-                for b in role["bullets"]
-            ],
-        }
-        for role in resume_data.get("experience", [])
-    ], indent=2)
-
-    skills_template = json.dumps({
-        "reordered_categories": [
-            {"paragraph_index": s["paragraph_index"], "category": s["category"], "items": s["items"]}
-            for s in resume_data.get("skills", [])
-        ],
-        "suggested_additions": [
-            {"category": "<category from above>", "skill": "<skill from JD not in resume>", "reason": "<why>"}
-        ],
-    }, indent=2)
-
-    projects_template = json.dumps([
-        {"title": p["title"], "title_paragraph_index": p["title_paragraph_index"], "relevance_score": 0, "reason": "<why>"}
-        for p in resume_data.get("projects", [])
-    ], indent=2)
-
-    tone_instruction = _TONE_INSTRUCTIONS.get(tone, "")
-    summary_line = "- Rewrite the summary to target this specific job." + (f" {tone_instruction}" if tone_instruction else "")
-
-    prompt = f"""Professional summary:
-{resume_data['summary']['text']}
-
-Work experience:
-{experience_text}
-
-Skills:
-{skills_text}
-
-Projects (title | tech stack):
-{projects_text}
-
-Optional sections:
-{optional_text}
-
-Job description:
-{jd}
-
-Return only this JSON, no other text.
-{summary_line}
-- Rewrite each experience bullet to better match the job description keywords and tone.
-- Reorder skill categories by relevance to the JD (most relevant first). Reorder items within each category by relevance. Return ALL {len(resume_data.get('skills', []))} categories.
-- Suggest skills from the JD that are missing from the resume (suggested_additions may be empty if none).
-- Rank ALL {len(resume_data.get('projects', []))} projects by relevance to the JD (relevance_score 0-100, ordered highest first).
-- For each optional section, recommend keep or drop based on JD relevance and one-page constraint.
-- List any JD-required skills or keywords completely absent from the resume in gaps (may be empty).
-
-{{
-  "summary": {{"suggested": "<rewritten summary>"}},
-  "experience": {experience_template},
-  "skills": {skills_template},
-  "projects": {projects_template},
-  "optional_sections": {{
-    "research_paper": {{"keep": true, "reason": "<why>"}},
-    "achievements": {{"keep": true, "reason": "<why>"}},
-    "certifications": {{"keep": true, "reason": "<why>"}}
-  }},
-  "gaps": ["<skill or keyword from JD not in resume>"]
-}}"""
-
+    # Retries on server errors AND empty responses (both are "total failures" in practice).
+    # ponytail: catches errors.ServerError; if client-side timeouts surface as another type, widen here.
     for attempt in range(1, _MAX_ATTEMPTS + 1):
         try:
             response = _client.models.generate_content(
-                model="gemini-3.5-flash",
+                model="gemini-3.1-flash-lite",
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    system_instruction="You are a resume tailoring assistant. Return only valid JSON. No prose, no markdown, no code fences.",
-                ),
+                config=types.GenerateContentConfig(**config_kwargs),
             )
-            break
+            if _response_text(response):
+                return response
         except errors.ServerError:
             if attempt == _MAX_ATTEMPTS:
                 raise
-            time.sleep(_RETRY_BASE_DELAY_SECONDS + random.uniform(0, 1))
+        if attempt < _MAX_ATTEMPTS:
+            # Exponential backoff with jitter — rides out sustained 503 overloads, not just blips.
+            delay = min(_RETRY_BASE_DELAY_SECONDS * 2 ** (attempt - 1), _RETRY_MAX_DELAY_SECONDS)
+            time.sleep(delay + random.uniform(0, 1))
+    return response  # exhausted retries on empty responses; let the caller surface the failure
 
-    text = response.text
+
+def _parse_json(text: str) -> dict:
     start = text.find("{")
     depth = 0
     end = start
@@ -148,3 +70,52 @@ Return only this JSON, no other text.
                 end = i + 1
                 break
     return json.loads(text[start:end])
+
+
+def _is_complete(resume_data: dict, suggestions: dict) -> bool:
+    """True if the response covers every bullet, project, and skill category the resume has."""
+    expected_bullets = {
+        b["paragraph_index"] for role in resume_data.get("experience", []) for b in role["bullets"]
+    }
+    got_bullets = {
+        b.get("paragraph_index")
+        for role in suggestions.get("experience", [])
+        for b in role.get("bullets", [])
+    }
+    if not expected_bullets <= got_bullets:
+        return False
+
+    expected_projects = {p["title_paragraph_index"] for p in resume_data.get("projects", [])}
+    got_projects = {p.get("title_paragraph_index") for p in suggestions.get("projects", [])}
+    if not expected_projects <= got_projects:
+        return False
+
+    expected_cats = len(resume_data.get("skills", []))
+    got_cats = len(suggestions.get("skills", {}).get("reordered_categories", []))
+    return got_cats >= expected_cats
+
+
+def get_suggestions(resume_data: dict, jd: str, tone: str = "Concise & Technical") -> dict:
+    prompt = build_suggestions_prompt(resume_data, jd, tone)
+
+    # One extra shot if the model drops bullets/projects/skill categories.
+    suggestions = None
+    for _ in range(2):
+        response = _generate_with_retry(prompt, SUGGESTIONS_SYSTEM_PROMPT, json_mode=True)
+        suggestions = _parse_json(_response_text(response))
+        if _is_complete(resume_data, suggestions):
+            return suggestions
+    return suggestions  # best effort after retry
+
+
+def generate_cover_letter(
+    company: str,
+    job_title: str,
+    jd: str,
+    accepted_summary: str,
+    accepted_bullets: list[str],
+) -> str:
+    prompt = build_cover_letter_prompt(company, job_title, jd, accepted_summary, accepted_bullets)
+    response = _generate_with_retry(prompt, COVER_LETTER_SYSTEM_PROMPT, json_mode=False)
+
+    return save_cover_letter(response.text, company, job_title)
